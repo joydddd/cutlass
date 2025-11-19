@@ -51,6 +51,7 @@ from .cute.typing import *
 # Utilities not belonging to CuTe
 from . import utils as utils
 from . import pipeline as pipeline
+from . import cnc as cnc
 
 # Used as internal symbol
 from . import cutlass_dsl as _dsl

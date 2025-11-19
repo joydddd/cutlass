@@ -1,0 +1,27 @@
+digraph {
+	nodesep=0.8 rankdir=LR ranksep=0.8 splines=spline
+	node [fillcolor="#a5d8ff" shape=box style="rounded,filled"]
+	edge [arrowsize=0.7]
+	0 [label="for\ntag=tag" fontsize=10 shape=diamond]
+	1 [label="cnc.zeros_like(out.tile, dtype=torch.float32)\ntag=tag1" fontsize=10 shape=box]
+	0 -> 1 [label=tag1]
+	2 [label="for\ntag=tag1" fontsize=10 shape=diamond]
+	1 -> 2 [label=acc]
+	3 [label="(cnc.load(x[tag[0], tag[2]]), cnc.load(y[tag[2], tag[1]]))\ntag=tag2" fontsize=10 shape=box]
+	2 -> 3 [label=tag2]
+	4 [label="cnc.addmm(acc, tile_x, tile_y)\ntag=tag2" fontsize=10 shape=box]
+	3 -> 4 [label="(tile_x, tile_y)"]
+	4 -> 2 [constraint=false]
+	5 [label="Call\ntag=tag1" fontsize=10 shape=box]
+	4 -> 5 [label=acc]
+	5 -> 0 [constraint=false]
+	{
+		rank=same
+		0
+		1
+		2
+		3
+		4
+		5
+	}
+}
