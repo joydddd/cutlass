@@ -197,6 +197,7 @@ jit = _dsl.CuTeDSL.jit
 kernel = _dsl.CuTeDSL.kernel
 register_jit_arg_adapter = _dsl.JitArgAdapterRegistry.register_jit_arg_adapter
 compile = _dsl.CompileCallable()
+lift = _dsl.LiftCallable()
 OptLevel = _dsl.OptLevel
 PtxasOptions = _dsl.PtxasOptions
 EnableAssertions = _dsl.EnableAssertions

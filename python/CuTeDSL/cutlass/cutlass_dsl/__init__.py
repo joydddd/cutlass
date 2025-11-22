@@ -54,6 +54,8 @@ from ..base_dsl.compiler import (
     LinkLibraries,
     EnableTVMFFI,
 )
+
+from ..cnc_dsl.lift import LiftCallable
 from ..base_dsl.runtime.jit_arg_adapters import *
 
 
