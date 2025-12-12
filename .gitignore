@@ -2,3 +2,10 @@
 __pycache__/
 cutlass_library.egg-info/
 /build*
+python/CuTeDSL/VERSION.EDITABLE
+python/CuTeDSL/cutlass/README.md
+python/CuTeDSL/cutlass/_mlir/
+python/CuTeDSL/cutlass/cute/py.typed
+python/CuTeDSL/lib/
+python/CuTeDSL/nvidia_cutlass_dsl.egg-info/
+.vscode/
