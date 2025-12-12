@@ -3,7 +3,11 @@ import ast
 
 import cutlass.cnc.ast as cnc_ast
 from cutlass.cnc.scheduler import tag_push
-from cutlass.cnc.symbolic_tag import SymCoord, SymInt, symcoord_to_ast
+
+from cutlass.cnc.symbolic_tag import SymCoord, symcoord_to_ast
+
+
+from torch import SymInt
 
 
 from helion._compiler.ast_extension import statement_from_string

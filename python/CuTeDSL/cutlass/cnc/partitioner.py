@@ -18,6 +18,16 @@ class Partitioner:
 
     def __str__(self) -> str:
         return f"Partitioner(tiler={self._tiler_mn}, tv_layout={self._tv_layout})"
+
+    def get_tile(self, tensor: Tensor, tag: Coord, *, loc=None, ip=None) -> Tensor:
+        raise NotImplementedError("Base Partitioner is not implemented. ")
+
+        
+    @dsl_user_op
+    def __getitem__(self, tag: Coord, *, loc=None, ip=None) -> Tensor:
+        self.get_tile(tensor, tag)
+        raise NotImplementedError("Base Partitioner is not implemented. ")
+
     
     @property
     def tv_layout(self) -> Layout:

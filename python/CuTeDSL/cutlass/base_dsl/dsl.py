@@ -410,7 +410,7 @@ class BaseDSL:
         Get the original function from the decorated function
         """
 
-        while not hasattr(fcn_ptr, "__name__") or fcn_ptr.__name__ != name:
+        while not hasattr(fcn_ptr, "__name__") or fcn_ptr.__name__ != name or hasattr(fcn_ptr, "__wrapped__"):
             # If the function is wrapped with functools, get from __wrapped__
             if hasattr(fcn_ptr, "__wrapped__"):
                 fcn_ptr = fcn_ptr.__wrapped__
