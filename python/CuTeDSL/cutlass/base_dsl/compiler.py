@@ -630,6 +630,11 @@ class CompileCallable:
         # Use local import to avoid circular import
         from .dsl import BaseDSL
 
+        # TODO: for now, use cncDSL as _dsl_object to preprocess the function
+        from ..cnc_dsl.cnc_dsl import cncDSL
+        func._dsl_cls = cncDSL
+
+
         BaseDSL._lazy_initialize_dsl(func)
 
         if not hasattr(func, "_dsl_object"):

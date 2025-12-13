@@ -430,7 +430,7 @@ class BaseDSL:
         """
         Run ast transformation and return the materialized function pointer
         """
-
+        breakpoint()
         # Lazy initialization of DSL object if has not been initialized
         if not hasattr(func, "_dsl_object"):
             func._dsl_object = func._dsl_cls._get_dsl()

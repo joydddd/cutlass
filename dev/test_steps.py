@@ -4,6 +4,7 @@ import cutlass.cute as cute
 import cutlass
 from cutlass.cute.runtime import from_dlpack
 from cutlass.cnc_dsl.trace import Context
+from cutlass.cnc_dsl.register import CnCOverrideContext
 
 
 # Helper functions to use tv_layout in the kernel
@@ -122,13 +123,14 @@ def jit_cute_add(A: torch.Tensor) -> torch.Tensor:
     cuteO = from_dlpack(torchO, assumed_align=16)
 
     with Context():
-        cute.compile(cute_add, cuteA, cuteO)
+        with CnCOverrideContext():
+            cute.compile(cute_add, cuteA, cuteO)
 
-        ctx = Context.current()
-        assert ctx is not None
+            ctx = Context.current()
+            assert ctx is not None
 
-        print("Step Registry: ", ctx.step_registry)
-        print("Step Origin Registry: ", ctx.step_origin_registry)
+            print("Step Registry: ", ctx.step_registry)
+            print("Step Origin Registry: ", ctx.step_origin_registry)
 
     # breakpoint()
 

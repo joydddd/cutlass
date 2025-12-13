@@ -419,6 +419,19 @@ class DSLPreprocessor(ast.NodeTransformer):
         while f"{base_name}_{i}" in used_names:
             i += 1
         return f"{base_name}_{i}"
+    
+    def gen_import_stmts(self):
+        # Step 3. Import cutlass and base_dsl
+        top_module_name = ".".join(self.client_module_name)
+        import_stmts = []
+        if self.import_top_module:
+            import_stmts.append(ast.Import(names=[ast.alias(name=top_module_name)]))
+        import_stmts.append(
+            ast.Import(
+                names=[ast.alias(name=f"{top_module_name}.base_dsl", asname="_dsl_")]
+            )
+        )
+        return import_stmts
 
     def transform_function(self, func_name, function_pointer):
         """
@@ -461,16 +474,7 @@ class DSLPreprocessor(ast.NodeTransformer):
         transformed_tree = self.visit(tree)
 
         # Step 3. Import cutlass and base_dsl
-        top_module_name = ".".join(self.client_module_name)
-        import_stmts = []
-        if self.import_top_module:
-            import_stmts.append(ast.Import(names=[ast.alias(name=top_module_name)]))
-        import_stmts.append(
-            ast.Import(
-                names=[ast.alias(name=f"{top_module_name}.base_dsl", asname="_dsl_")]
-            )
-        )
-        transformed_tree.body = import_stmts + transformed_tree.body
+        transformed_tree.body = self.gen_import_stmts() + transformed_tree.body
 
         # Step 4. Import cutlass and base_dsl
         ast.fix_missing_locations(transformed_tree)

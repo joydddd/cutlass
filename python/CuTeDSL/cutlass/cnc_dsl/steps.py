@@ -86,7 +86,11 @@ class Step:
             lifter_ctx.register_step(self, tag)
 
             # Trace into the step.
-            return self.func(*args, **kwargs)
+            from .register import CnCOverrideContext
+            assert CnCOverrideContext.current() is not None
+            print("CnCOverrideContext.current(): ", CnCOverrideContext.current())
+            BaseDSL._preprocess_and_execute(self.func)
+            return self.func(*args, **kwargs)  # type: ignore[attr-defined]
         else:
             # CnCLifter not enabled. Continue the normal jit compilation.
             return self.func._jit_wrapper(*args, **kwargs)  # type: ignore[attr-defined]
