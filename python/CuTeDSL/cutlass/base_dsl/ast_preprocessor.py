@@ -419,6 +419,19 @@ class DSLPreprocessor(ast.NodeTransformer):
         while f"{base_name}_{i}" in used_names:
             i += 1
         return f"{base_name}_{i}"
+    
+    def _import_modules(self):
+        top_module_name = ".".join(self.client_module_name)
+        import_stmts = []
+        if self.import_top_module:
+            import_stmts.append(ast.Import(names=[ast.alias(name=top_module_name)]))
+        import_stmts.append(
+            ast.Import(
+                names=[ast.alias(name=f"{top_module_name}.base_dsl", asname="_dsl_")]
+            )
+        )
+        return import_stmts
+        
 
     def transform_function(self, func_name, function_pointer):
         """
@@ -461,15 +474,7 @@ class DSLPreprocessor(ast.NodeTransformer):
         transformed_tree = self.visit(tree)
 
         # Step 3. Import cutlass and base_dsl
-        top_module_name = ".".join(self.client_module_name)
-        import_stmts = []
-        if self.import_top_module:
-            import_stmts.append(ast.Import(names=[ast.alias(name=top_module_name)]))
-        import_stmts.append(
-            ast.Import(
-                names=[ast.alias(name=f"{top_module_name}.base_dsl", asname="_dsl_")]
-            )
-        )
+        import_stmts = self._import_modules()
         transformed_tree.body = import_stmts + transformed_tree.body
 
         # Step 4. Import cutlass and base_dsl
@@ -1455,56 +1460,66 @@ class DSLPreprocessor(ast.NodeTransformer):
 
     def check_decorator(self, node: ast.AST) -> bool:
         """
-        Check if the function has the correct decorator for preprocessing.
+        Check if the function has the correct decorator for preprocessing. Allow preprocessing for @step as well. 
         """
+        # TODO: checkout decorator outside of ast processing. This is problematic when decrorators are imported as a different name in the scope. 
         if not isinstance(node, ast.FunctionDef):
             return False
         decorator_list = node.decorator_list
         if len(decorator_list) == 0:
             return False
 
+        
+        def _is_decorator_ast(node: ast.AST) -> bool: 
+            if isinstance(node, ast.Attribute) and node.attr in ["jit", "kernel", "step"]:
+                return True
+            if isinstance(node, ast.Name) and node.id in ["jit", "kernel", "step"]:
+                return True
+            return False
+
         for d in decorator_list:
             if isinstance(d, ast.Call):
-                if isinstance(d.func, ast.Attribute):
-                    if d.func.attr in ["jit", "kernel"]:
-                        if d.keywords == []:
-                            return True
-                        for keyword in d.keywords:
-                            if keyword.arg == "preprocess":
-                                try:
-                                    if isinstance(keyword.value, ast.Constant):
-                                        return keyword.value.value
-                                    else:
-                                        return ast.literal_eval(keyword.value)
-                                except:
-                                    pass
-
-            elif isinstance(d, ast.Attribute):
-                if d.attr in ["jit", "kernel"]:
+                if _is_decorator_ast(d.func):
+                    if d.keywords == []:
+                        return True
+                    for keyword in d.keywords:
+                        if keyword.arg == "preprocess":
+                            try:
+                                if isinstance(keyword.value, ast.Constant):
+                                    return keyword.value.value
+                                else:
+                                    return ast.literal_eval(keyword.value)
+                            except:
+                                pass
                     return True
 
+            elif _is_decorator_ast(d):
+                return True
         return False
 
     def remove_dsl_decorator(self, decorator_list):
         """
-        Remove .jit and .kernel decorators
+        Remove .jit .kernel .step decorators
         The decorator can be in two forms:
         - @jit(...)
         - @jit
         """
         new_decorator_list = []
-        decorator_names = ["jit", "kernel"]
-        for d in decorator_list:
-            is_jit_or_kernel = False
-            if isinstance(d, ast.Call):
-                if isinstance(d.func, ast.Attribute):
-                    if d.func.attr in decorator_names:
-                        is_jit_or_kernel = True
-            elif isinstance(d, ast.Attribute):
-                if d.attr in decorator_names:
-                    is_jit_or_kernel = True
 
-            if not is_jit_or_kernel:
+        def _is_decorator_ast(node: ast.AST) -> bool: 
+            if isinstance(node, ast.Attribute) and node.attr in ["jit", "kernel", "step"]:
+                return True
+            if isinstance(node, ast.Name) and node.id in ["jit", "kernel", "step"]:
+                return True
+            return False
+        for d in decorator_list:
+            is_dsl_decorator = False
+            if isinstance(d, ast.Call):
+                is_dsl_decorator = _is_decorator_ast(d.func)
+            else:
+                is_dsl_decorator = _is_decorator_ast(d)
+
+            if not is_dsl_decorator:
                 new_decorator_list.append(d)
         return new_decorator_list
 

@@ -1,9 +1,11 @@
-from cutlass.cnc_dsl.steps import step
 import torch
 import cutlass.cute as cute
 import cutlass
 from cutlass.cute.runtime import from_dlpack
-from cutlass.cnc_dsl.trace import Context
+
+from cutlass.cnc_dsl.steps import step
+from cutlass.cnc_dsl.graph import CnCContext
+from cutlass.cnc_dsl.register import CnCOverrideContext
 
 
 # Helper functions to use tv_layout in the kernel
@@ -94,7 +96,7 @@ def add_kernel(gA: cute.Tensor, gO: cute.Tensor, tv_layout: cute.Layout):
 
 
 # Host function that launches the CuTe kernel
-@cute.jit
+@cute.jit(preprocess=True)
 def cute_add(A: cute.Tensor, OUT: cute.Tensor):
     # ---- ✨ Your Code Here ✨----
     # Compute tv_tiler and tv_layout for A & O.
@@ -118,21 +120,26 @@ def cute_add(A: cute.Tensor, OUT: cute.Tensor):
 
 def jit_cute_add(A: torch.Tensor) -> torch.Tensor:
     torchO = torch.empty_like(A)
+
     cuteA = from_dlpack(A, assumed_align=16)
     cuteO = from_dlpack(torchO, assumed_align=16)
+    
+    # compiled_cute_add = cute.compile(cute_add, cuteA, cuteO)
+    # compiled_cute_add(cuteA, cuteO)
+    # print(torchO)
 
-    with Context():
-        cute.compile(cute_add, cuteA, cuteO)
+    with CnCContext():
+        with CnCOverrideContext():
+            cuteA = from_dlpack(A, assumed_align=16)
+            cuteO = from_dlpack(torchO, assumed_align=16)
+            
+            cute.compile(cute_add, cuteA, cuteO)
 
-        ctx = Context.current()
-        assert ctx is not None
+            ctx = CnCContext.current()
+            assert ctx is not None
 
-        print("Step Registry: ", ctx.step_registry)
-        print("Step Origin Registry: ", ctx.step_origin_registry)
+            ctx.print()
 
-    # breakpoint()
-
-    # compiled_func(cuteA, cuteO)
     return torchO
 
 

@@ -1,19 +1,21 @@
 from __future__ import annotations
-from dataclasses import dataclass
-from typing import Callable, Optional
+
+import dataclasses
 from types import FrameType
 import inspect
 
 
-import cutlass.cute as cute
 from ..base_dsl.dsl import BaseDSL
 from ..base_dsl.utils.logger import log
 
 from .tag import Tag
-from .trace import Context
+from .graph import StepState, CnCContext
+import cutlass.cute as cute
+
+from typing import Callable, Optional
 
 
-@dataclass
+@dataclasses.dataclass
 class Step:
     _name: str
     _func: Callable
@@ -77,16 +79,41 @@ class Step:
                 f"Tag {self._tag_name} is not a parameter of {self._func.__name__}"
             )
 
-    def __call__(self, *args, **kwargs):
-        lifter_ctx = Context.current()
-        if lifter_ctx is not None:
-            if self._static_tag is not None:
-                lifter_ctx.register_static_tag(self._static_tag)
-            tag = self._retrive_tag_from_args(*args, **kwargs)
-            lifter_ctx.register_step(self, tag)
+    def lift_step(self, ctx: CnCContext, *args, **kwargs):
+        """
+        Lift step to CnC context and put it in the CnC graph.
+        """
+        tag = self._retrive_tag_from_args(*args, **kwargs)
 
-            # Trace into the step.
-            return self.func(*args, **kwargs)
+        # Trace into the step.
+        from .register import CnCOverrideContext
+
+        assert CnCOverrideContext.current() is not None
+
+        BaseDSL._preprocess_and_execute(
+            self.func
+        )  # TODO: use CnC preprocess instead of BaseDSL preprocess.
+        step_state = StepState(
+            id=None,
+            ast=None,
+            parent=None,
+            name=self.name,
+            origin=self,
+            tag=tag,
+            inputs=[],
+            outputs=[],
+        )
+        ctx.register_step(step_state)
+        return self.func(*args, **kwargs)  # Trace into the step.
+
+    def __call__(self, *args, **kwargs):
+        """
+        Runtime call of a step.
+
+        """
+        lifter_ctx = CnCContext.current()
+        if lifter_ctx is not None:
+            return self.lift_step(lifter_ctx, *args, **kwargs)
         else:
             # CnCLifter not enabled. Continue the normal jit compilation.
             return self.func._jit_wrapper(*args, **kwargs)  # type: ignore[attr-defined]
@@ -131,8 +158,6 @@ def step(tag: str | Tag, jit: Callable = cute.jit, *jit_args, **jit_kwargs) -> C
     log().info("cnc node")
 
     def step_decorator(func: Callable) -> Callable:
-        print(f"Processing step: {func.__name__}")
-
         # Apply the jit decorator with pass-through arguments
         # Handle both @jit and @jit(...) forms
         jit_wrapper = jit_decorator(func)
