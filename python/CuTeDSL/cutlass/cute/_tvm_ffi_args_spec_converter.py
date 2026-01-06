@@ -296,4 +296,4 @@ def attach_args_spec_converter():
     """Attach TVM FFI ABI interface postprocessor to the DSL."""
     from .. import cutlass_dsl as _dsl
 
-    _dsl.CuTeDSL._get_dsl()._tvm_ffi_args_spec_converter = _tvm_ffi_args_spec_converter
+    # _dsl.CuTeDSL._get_dsl()._tvm_ffi_args_spec_converter = _tvm_ffi_args_spec_converter

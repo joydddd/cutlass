@@ -20,19 +20,20 @@ from ...cutlass_dsl import CuTeDSL
 from functools import partial as _partial
 from ...cutlass_dsl.cuda_jit_executor import CudaDialectJitCompiledFunction
 
-dump_to_object = _partial(
-    _dump_to_object,
-    dsl=CuTeDSL._get_dsl(),
-)
-export_to_c = _partial(
-    _export_to_c,
-    dsl=CuTeDSL._get_dsl(),
-    c_header_generator=CuteCHeaderGenerator(),
-    use_gpu_dialect=False,
-)
-__all__ = [
-    "CuteCHeaderGenerator",
-    "get_export_module",
-    "dump_to_object",
-    "export_to_c",
-]
+# TODO: temporary disable export functions to avoid early initialization of DSL.
+# dump_to_object = _partial(
+#     _dump_to_object,
+#     dsl=CuTeDSL._get_dsl(),
+# )
+# export_to_c = _partial(
+#     _export_to_c,
+#     dsl=CuTeDSL._get_dsl(),
+#     c_header_generator=CuteCHeaderGenerator(),
+#     use_gpu_dialect=False,
+# )
+# __all__ = [
+#     "CuteCHeaderGenerator",
+#     "get_export_module",
+#     "dump_to_object",
+#     "export_to_c",
+# ]
